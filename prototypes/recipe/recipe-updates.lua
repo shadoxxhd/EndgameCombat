@@ -52,8 +52,8 @@ if data.raw.item.resin then
 	table.insert(data.raw.recipe["sticky-cheap"].ingredients, {type = "item", name = "resin", amount = 1})
 	table.insert(data.raw.recipe["sticky-expensive"].ingredients, {type = "item", name = "resin", amount = 2})
 else
-	table.insert(data.raw.recipe["sticky-cheap"].ingredients, {type = "item", name = "raw-wood", amount = 1})
-	table.insert(data.raw.recipe["sticky-expensive"].ingredients, {type = "item", name = "raw-wood", amount = 2})
+	table.insert(data.raw.recipe["sticky-cheap"].ingredients, {type = "item", name = "wood", amount = 1})
+	table.insert(data.raw.recipe["sticky-expensive"].ingredients, {type = "item", name = "wood", amount = 2})
 end
 
 if data.raw.fluid.chlorine then

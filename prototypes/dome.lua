@@ -22,9 +22,9 @@ end
 local function createCircuitActivitySprite()
 	local ret = {
         filename = "__base__/graphics/entity/combinator/activity-leds/constant-combinator-LED-S.png",
-        width = 11,
-        height = 11,
-        frame_count = 1,
+        width = 8,
+        height = 8,
+        frame_count = 4,
         shift = {-0.296875, -0.078125},
     }
 	return ret
@@ -164,7 +164,7 @@ local function createShieldDome(name, params)
 			name = name .. "-shield-dome",
 			icon = "__EndgameCombat__/graphics/icons/" .. name .. "-shield-dome.png",
 			icon_size = 32,
-			flags = {"goes-to-quickbar"},
+			flags = {},
 			subgroup = "defensive-structure",
 			order = "f[plasma-turret]-f[" .. name .. "-shield-dome-1-2]",
 			place_result = name .. "-shield-dome",	

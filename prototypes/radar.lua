@@ -5,7 +5,7 @@ data:extend(
     name = "big-radar",
     icon = "__EndgameCombat__/graphics/icons/radar.png",
 	icon_size = 32,
-    flags = {"goes-to-quickbar"},
+    flags = {},
     subgroup = "defensive-structure",
     order = "f[radar]-f[big-radar-1-2]",
     place_result = "big-radar",	

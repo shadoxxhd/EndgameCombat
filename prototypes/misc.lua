@@ -46,7 +46,7 @@ data:extend({
 		name = "guard-tower",
 		icon = "__EndgameCombat__/graphics/icons/tower.png",
 		icon_size = 32,
-		flags = {"goes-to-quickbar"},
+		flags = {},
 		subgroup = "defensive-structure",
 		order = "guard-tower",
 		place_result = "guard-tower",	
