@@ -252,6 +252,64 @@ function repairTurrets(egcombat, force)
 	end
 end
 
+local function interpolate(w1,v1,w2,v2)
+	return (w1*v1+w2*v2)/(w1+w2)
+end
+
+--roughly aligns to spawn curve: 0-0.3 = small only; 0.3-0.5 adds medium,0.5-0.9 adds big, 0.9+ = behemoth
+local function getAverageEnemyHealth(damage) --move this to a proper linear interpolate in 0.17 when can have centralized reference - probably want to cache into an array (2.5% granularity) for performance
+	local evo = game.forces.enemy.evolution_factor
+	local unit = nil
+	if evo < 0.3 then
+		return getUnitHealth("small-biter")
+	elseif evo < 0.5 then
+		return interpolate(0.5-evo,getUnitHealth("small-biter"),evo-0.3,getUnitHealth("medium-biter"))
+	elseif evo < 0.9 then
+		return interpolate(0.9-evo,getUnitHealth("medium-biter"),evo-0.5,getUnitHealth("big-biter"))
+	else
+		return interpolate(1.0-evo,getUnitHealth("big-biter"),evo-0.9,getUnitHealth("behemoth-biter"))
+	end
+end
+
+local function getNestedTableValue(root, keys)
+	local val = root
+	for _,key in pairs(keys) do
+		val = val[key]
+		if not val then return nil end
+	end
+	return val
+end
+
+local function getDamageDealtThroughEffects(effects)
+	if not effects then return 0 end
+	local type = "physical"
+	local ret = 0
+	for _,effect in pairs(effects) do
+		if effect.damage then
+			ret = ret+effect.damage.amount
+			if effect.damage.type then
+				type = effect.damage.type
+			end
+		end
+	end
+	return ret, type
+end
+
+local function getAmmoTypeDamage(ammo)
+	--local ret = getNestedTableValue(ammo, {"action", 1, "action_delivery", 1, "target_effects", 2, "damage", "amount"})
+	--return ret and ret or 0
+	local root = getNestedTableValue(ammo, {"action", 1, "action_delivery", 1})
+	if root.projectile then
+		local effects = getNestedTableValue(game.entity_prototypes[root.projectile].attack_result, {1, "action_delivery", 1, "target_effects"})
+		return getDamageDealtThroughEffects(effects)
+	elseif root.beam then
+		local effects = getNestedTableValue(game.entity_prototypes[root.beam].attack_result, {1, "action_delivery", 1, "target_effects"})
+		return getDamageDealtThroughEffects(effects)
+	else
+		return getDamageDealtThroughEffects(root.target_effects)
+	end
+end
+
 function handleTurretLogistics(egcombat, force)
 	local auto = force.technologies["turret-auto-logistics"].researched
 	--game.print(#egcombat.placed_turrets[force.name])
@@ -264,7 +322,18 @@ function handleTurretLogistics(egcombat, force)
 			local logi = entry.logistic.get_inventory(defines.inventory.chest)
 			if auto then
 				if inv[1] and inv[1].valid_for_read then
-					entry.logistic.set_request_slot({name=inv[1].name, count=math.min(100, math.max(5, math.ceil(inv[1].prototype.stack_size/2)))}, 1)
+					local shots = inv[1].count*inv[1].prototype.magazine_size
+					local info = inv[1].prototype.get_ammo_type("turret")
+					local per, type = getAmmoTypeDamage(info)
+					if entry.turret.prototype.attack_parameters then
+						per = per*entry.turret.prototype.attack_parameters.damage_modifier
+					end
+					local tech1 = 1+entry.turret.force.get_ammo_damage_modifier(info.category)
+					local tech2 = 1+entry.turret.force.get_turret_attack_modifier(entry.turret.name)
+					local per2 = per*tech1*tech2
+					local lowThreshold = getAverageEnemyHealth("physical")*25
+					local requested = math.ceil(lowThreshold*1.5/math.min(per2,getAverageEnemyHealth("physical"))/shots)-inv[1].count
+					entry.logistic.set_request_slot({name=inv[1].name, count=math.min(100, math.max(math.max(0,5-inv[1].count), math.ceil(requested)))}, 1)
 				else
 					entry.logistic.clear_request_slot(1)
 				end
